@@ -7,7 +7,7 @@ GenePool allows users to buy fractionalized shares of biotech investment bundles
 ---
 
 ## Demo Video
-- [Watch the Demo on Loom](YOUR_LOOM_LINK_HERE)
+- [Watch the Demo on Loom](https://www.loom.com/share/ba0b43d36c9a40b7a0a9b404c6528a8d?sid=771c7e8f-ea84-40eb-b886-b06e0047d401)
 
 ---
 
