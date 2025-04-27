@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Biotech Investment Platform</title>
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 30px;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .section {
+      margin-top: 30px;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      margin-top: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🌱 Biotech Investment Portal 🌱</h1>
+
+  <div class="section">
+    <button id="connectButton">Connect Wallet</button>
+    <div id="walletAddress"></div>
+  </div>
+
+  <div class="section">
+    <h2>Mint New Investment Bundle (Admin Only)</h2>
+    <input type="text" id="bundleUri" placeholder="IPFS Metadata URL">
+    <input type="number" id="bundleValue" placeholder="Total Value (Wei)">
+    <button id="mintButton">Mint Bundle</button>
+    <div id="mintStatus"></div>
+  </div>
+
+  <div class="section">
+    <h2>Buy Shares</h2>
+    <input type="number" id="buyBundleId" placeholder="Bundle ID">
+    <input type="number" id="investmentAmount" placeholder="Amount in Wei">
+    <button id="buyButton">Buy Shares</button>
+    <div id="buyStatus"></div>
+  </div>
+
+  <div class="section">
+    <h2>Check My Ownership</h2>
+    <input type="number" id="checkBundleId" placeholder="Bundle ID">
+    <button id="checkButton">Check My Share</button>
+    <div id="checkStatus"></div>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script>
+  const contractAddress = "0xD4Fc541236927E2EAf8F27606bD7309C1Fc2cbee";
+  const contractABI = [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {"internalType": "string", "name": "tokenURI_", "type": "string"},
+        {"internalType": "uint256", "name": "totalValue_", "type": "uint256"}
+      ],
+      "name": "mintBundle",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "bundleId", "type": "uint256"}
+      ],
+      "name": "buyShare",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "bundleId", "type": "uint256"},
+        {"internalType": "address", "name": "user", "type": "address"}
+      ],
+      "name": "getShare",
+      "outputs": [
+        {"internalType": "uint256", "name": "", "type": "uint256"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "bundleId", "type": "uint256"}
+      ],
+      "name": "bundleInfo",
+      "outputs": [
+        {"internalType": "uint256", "name": "totalValue", "type": "uint256"},
+        {"internalType": "uint256", "name": "totalSold", "type": "uint256"},
+        {"internalType": "bool", "name": "active", "type": "bool"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ];
+
+  let provider, signer, contract;
+
+  async function connectWallet() {
+    if (typeof window.ethereum !== 'undefined') {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      const address = await signer.getAddress();
+      document.getElementById('walletAddress').innerText = `Connected: ${address}`;
+
+      contract = new ethers.Contract(contractAddress, contractABI, signer);
+      console.log("Connected to contract:", contractAddress);
+    } else {
+      alert('MetaMask is not installed.');
+    }
+  }
+
+  async function mintBundle() {
+    try {
+      const uri = document.getElementById('bundleUri').value;
+      const value = document.getElementById('bundleValue').value;
+
+      const tx = await contract.mintBundle(uri, value);
+      document.getElementById('mintStatus').innerText = "Minting in progress...";
+      await tx.wait();
+      document.getElementById('mintStatus').innerText = "✅ Bundle minted successfully!";
+    } catch (error) {
+      console.error(error);
+      document.getElementById('mintStatus').innerText = "❌ Minting failed.";
+    }
+  }
+
+  async function buyShares() {
+    try {
+      const bundleId = document.getElementById('buyBundleId').value;
+      const amount = document.getElementById('investmentAmount').value;
+
+      const tx = await contract.buyShare(bundleId, { value: amount });
+      document.getElementById('buyStatus').innerText = "Buying shares...";
+      await tx.wait();
+      document.getElementById('buyStatus').innerText = "✅ Shares purchased!";
+    } catch (error) {
+      console.error(error);
+      document.getElementById('buyStatus').innerText = "❌ Purchase failed.";
+    }
+  }
+
+  async function checkShare() {
+    try {
+      const bundleId = document.getElementById('checkBundleId').value;
+      const userAddress = await signer.getAddress();
+
+      const share = await contract.getShare(bundleId, userAddress);
+      document.getElementById('checkStatus').innerText = `You own ${(share / 100).toFixed(2)}% of this bundle.`;
+    } catch (error) {
+      console.error(error);
+      document.getElementById('checkStatus').innerText = "❌ Check failed.";
+    }
+  }
+
+  document.getElementById('connectButton').addEventListener('click', connectWallet);
+  document.getElementById('mintButton').addEventListener('click', mintBundle);
+  document.getElementById('buyButton').addEventListener('click', buyShares);
+  document.getElementById('checkButton').addEventListener('click', checkShare);
+</script>
+
+</body>
+</html>
